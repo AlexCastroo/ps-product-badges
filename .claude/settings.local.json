@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:devdocs.prestashop-project.org)",
+      "PowerShell(docker exec ps-product-badges-prestashop-1 *)"
+    ]
+  }
+}
