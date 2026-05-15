@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:devdocs.prestashop-project.org)",
+      "PowerShell(docker exec ps-product-badges-prestashop-1 *)",
+      "Bash(mkdir -p \"C:\\\\Programacion\\\\ps-product-badges\\\\classes\")",
+      "Bash(mkdir -p \"C:\\\\Programacion\\\\ps-product-badges\\\\controllers\\\\admin\")",
+      "Bash(docker exec *)",
+      "Bash(xargs grep -l \"displayProduct\")",
+      "Bash(Remove-Item *)"
+    ]
+  }
+}
