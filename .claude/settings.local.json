@@ -3,7 +3,9 @@
     "allow": [
       "WebSearch",
       "WebFetch(domain:devdocs.prestashop-project.org)",
-      "PowerShell(docker exec ps-product-badges-prestashop-1 *)"
+      "PowerShell(docker exec ps-product-badges-prestashop-1 *)",
+      "Bash(mkdir -p \"C:\\\\Programacion\\\\ps-product-badges\\\\classes\")",
+      "Bash(mkdir -p \"C:\\\\Programacion\\\\ps-product-badges\\\\controllers\\\\admin\")"
     ]
   }
 }

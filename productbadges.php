@@ -4,6 +4,41 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+class ProductBadge extends ObjectModel
+{
+    public $bgcolor;
+    public $textcolor;
+    public $position;
+    public $active;
+    public $date_add;
+    public $date_upd;
+
+    /** @var string Multilang */
+    public $text;
+
+    public function delete(): bool
+    {
+        Db::getInstance()->delete('product_badge_product', '`id_badge` = ' . (int) $this->id);
+        Db::getInstance()->delete('product_badge_lang',    '`id_badge` = ' . (int) $this->id);
+        return parent::delete();
+    }
+
+    public static $definition = [
+        'table'     => 'product_badge',
+        'primary'   => 'id_badge',
+        'multilang' => true,
+        'fields'    => [
+            'bgcolor'   => ['type' => self::TYPE_STRING, 'validate' => 'isColor',       'size' => 7,   'required' => true],
+            'textcolor' => ['type' => self::TYPE_STRING, 'validate' => 'isColor',       'size' => 7,   'required' => true],
+            'position'  => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 20,  'required' => true],
+            'active'    => ['type' => self::TYPE_BOOL,   'validate' => 'isBool'],
+            'date_add'  => ['type' => self::TYPE_DATE,   'validate' => 'isDate'],
+            'date_upd'  => ['type' => self::TYPE_DATE,   'validate' => 'isDate'],
+            'text'      => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 255, 'required' => true, 'lang' => true],
+        ],
+    ];
+}
+
 class ProductBadges extends Module
 {
     public function __construct()
@@ -107,7 +142,91 @@ class ProductBadges extends Module
 
     public function getContent(): string
     {
-        return '';
+        $output = '';
+
+        if (Tools::isSubmit('submit_productbadges_config')) {
+            Configuration::updateValue('PRODUCTBADGES_ENABLED',      (int) Tools::getValue('PRODUCTBADGES_ENABLED'));
+            Configuration::updateValue('PRODUCTBADGES_SHOW_LISTING', (int) Tools::getValue('PRODUCTBADGES_SHOW_LISTING'));
+            Configuration::updateValue('PRODUCTBADGES_SHOW_PRODUCT', (int) Tools::getValue('PRODUCTBADGES_SHOW_PRODUCT'));
+            Configuration::updateValue('PRODUCTBADGES_MAX_BADGES',   max(1, (int) Tools::getValue('PRODUCTBADGES_MAX_BADGES')));
+            $output .= $this->displayConfirmation($this->l('Settings saved.'));
+        }
+
+        $badge_list_url = $this->context->link->getAdminLink('AdminProductBadges');
+        $output .= '<a href="' . $badge_list_url . '" class="btn btn-default" style="margin-bottom:15px;">'
+                 . '<i class="icon-tag"></i> ' . $this->l('Manage badges') . '</a>';
+
+        return $output . $this->renderConfigForm();
+    }
+
+    private function renderConfigForm(): string
+    {
+        $fields_form = [
+            'legend' => [
+                'title' => $this->l('Settings'),
+                'icon'  => 'icon-cogs',
+            ],
+            'input' => [
+                [
+                    'type'   => 'switch',
+                    'label'  => $this->l('Enable module'),
+                    'name'   => 'PRODUCTBADGES_ENABLED',
+                    'values' => [
+                        ['id' => 'enabled_on',  'value' => 1, 'label' => $this->l('Yes')],
+                        ['id' => 'enabled_off', 'value' => 0, 'label' => $this->l('No')],
+                    ],
+                ],
+                [
+                    'type'   => 'switch',
+                    'label'  => $this->l('Show on product listings'),
+                    'name'   => 'PRODUCTBADGES_SHOW_LISTING',
+                    'values' => [
+                        ['id' => 'listing_on',  'value' => 1, 'label' => $this->l('Yes')],
+                        ['id' => 'listing_off', 'value' => 0, 'label' => $this->l('No')],
+                    ],
+                ],
+                [
+                    'type'   => 'switch',
+                    'label'  => $this->l('Show on product page'),
+                    'name'   => 'PRODUCTBADGES_SHOW_PRODUCT',
+                    'values' => [
+                        ['id' => 'product_on',  'value' => 1, 'label' => $this->l('Yes')],
+                        ['id' => 'product_off', 'value' => 0, 'label' => $this->l('No')],
+                    ],
+                ],
+                [
+                    'type'  => 'text',
+                    'label' => $this->l('Max badges per product'),
+                    'name'  => 'PRODUCTBADGES_MAX_BADGES',
+                    'class' => 'fixed-width-xs',
+                ],
+            ],
+            'submit' => [
+                'title' => $this->l('Save'),
+                'name'  => 'submit_productbadges_config',
+            ],
+        ];
+
+        $helper                            = new HelperForm();
+        $helper->module                    = $this;
+        $helper->name_controller           = $this->name;
+        $helper->token                     = Tools::getAdminTokenLite('AdminModules');
+        $helper->currentIndex              = AdminController::$currentIndex . '&configure=' . $this->name;
+        $helper->default_form_language     = (int) $this->context->language->id;
+        $helper->allow_employee_form_lang  = (int) Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG', 0);
+        $helper->submit_action             = 'submit_productbadges_config';
+        $helper->tpl_vars                  = [
+            'fields_value' => [
+                'PRODUCTBADGES_ENABLED'      => (int) Configuration::get('PRODUCTBADGES_ENABLED'),
+                'PRODUCTBADGES_SHOW_LISTING' => (int) Configuration::get('PRODUCTBADGES_SHOW_LISTING'),
+                'PRODUCTBADGES_SHOW_PRODUCT' => (int) Configuration::get('PRODUCTBADGES_SHOW_PRODUCT'),
+                'PRODUCTBADGES_MAX_BADGES'   => (int) Configuration::get('PRODUCTBADGES_MAX_BADGES'),
+            ],
+            'languages'   => $this->context->controller->getLanguages(),
+            'id_language' => (int) $this->context->language->id,
+        ];
+
+        return $helper->generateForm([['form' => $fields_form]]);
     }
 
     // -------------------------------------------------------------------------
