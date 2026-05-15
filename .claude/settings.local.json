@@ -7,7 +7,8 @@
       "Bash(mkdir -p \"C:\\\\Programacion\\\\ps-product-badges\\\\classes\")",
       "Bash(mkdir -p \"C:\\\\Programacion\\\\ps-product-badges\\\\controllers\\\\admin\")",
       "Bash(docker exec *)",
-      "Bash(xargs grep -l \"displayProduct\")"
+      "Bash(xargs grep -l \"displayProduct\")",
+      "Bash(Remove-Item *)"
     ]
   }
 }

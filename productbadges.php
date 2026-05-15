@@ -75,11 +75,9 @@ class ProductBadges extends Module
 
         $hooks = [
             'displayAdminProductsExtra',
-            'displayProductListItem',
             'displayProductPriceBlock',
             'displayFooterProduct',
             'displayHeader',
-            'displayBackOfficeHeader',
             'actionProductAdd',
             'actionProductUpdate',
         ];
@@ -284,14 +282,15 @@ class ProductBadges extends Module
             '`id_product` = ' . (int) $id_product . ' AND `id_shop` = ' . $id_shop
         );
 
-        if (empty($badge_ids)) {
+        $valid_ids = $this->filterValidBadgeIds($badge_ids);
+        if (empty($valid_ids)) {
             return;
         }
 
         $rows = [];
-        foreach ($badge_ids as $id_badge) {
+        foreach ($valid_ids as $id_badge) {
             $rows[] = [
-                'id_badge'   => (int) $id_badge,
+                'id_badge'   => $id_badge,
                 'id_product' => (int) $id_product,
                 'id_shop'    => $id_shop,
             ];
@@ -300,20 +299,25 @@ class ProductBadges extends Module
         Db::getInstance()->insert('product_badge_product', $rows);
     }
 
+    private function filterValidBadgeIds(array $badge_ids): array
+    {
+        $ids = array_values(array_filter(array_map('intval', $badge_ids)));
+        if (empty($ids)) {
+            return [];
+        }
+
+        $in  = implode(',', $ids);
+        $sql = 'SELECT `id_badge` FROM `' . _DB_PREFIX_ . 'product_badge`
+                WHERE `id_badge` IN (' . $in . ') AND `active` = 1';
+
+        $rows = Db::getInstance()->executeS($sql) ?: [];
+
+        return array_map('intval', array_column($rows, 'id_badge'));
+    }
+
     // -------------------------------------------------------------------------
     // Hooks — display front
     // -------------------------------------------------------------------------
-
-    public function hookDisplayProductListItem(array $params): string
-    {
-        if (!Configuration::get('PRODUCTBADGES_ENABLED') || !Configuration::get('PRODUCTBADGES_SHOW_LISTING')) {
-            return '';
-        }
-
-        $id_product = (int) ($params['product']['id_product'] ?? $params['product']['id'] ?? 0);
-
-        return $this->renderFrontBadges($id_product);
-    }
 
     public function hookDisplayProductPriceBlock(array $params): string
     {
@@ -370,41 +374,30 @@ class ProductBadges extends Module
         );
     }
 
-    private function renderFrontBadges(int $id_product): string
-    {
-        if (!$id_product) {
-            return '';
-        }
-
-        $badges = $this->getBadgesByProduct($id_product);
-        if (empty($badges)) {
-            return '';
-        }
-
-        $this->context->smarty->assign('pb_badges', $badges);
-
-        return $this->context->smarty->fetch(
-            _PS_MODULE_DIR_ . 'productbadges/views/templates/front/badges.tpl'
-        );
-    }
-
     public function hookDisplayHeader(): void
     {
         if (!Configuration::get('PRODUCTBADGES_ENABLED')) {
             return;
         }
 
+        $php_self = $this->context->controller->php_self ?? '';
+        $css_pages = ['product', 'category', 'search', 'best-sales', 'new-products', 'prices-drop'];
+
+        if (!in_array($php_self, $css_pages)) {
+            return;
+        }
+
         $this->context->controller->addCSS($this->_path . 'views/css/productbadges.css');
-        $this->context->controller->addJS($this->_path . 'views/js/productbadges.js');
+
+        // JS only needed on product page — listing uses self-contained IIFE
+        if ($php_self === 'product') {
+            $this->context->controller->addJS($this->_path . 'views/js/productbadges.js');
+        }
     }
 
     // -------------------------------------------------------------------------
     // Hooks — display back office
     // -------------------------------------------------------------------------
-
-    public function hookDisplayBackOfficeHeader(): void
-    {
-    }
 
     public function hookDisplayAdminProductsExtra(array $params): string
     {
@@ -421,7 +414,7 @@ class ProductBadges extends Module
         $this->context->smarty->assign([
             'pb_badges'     => $badges,
             'pb_id_product' => $id_product,
-            'pb_ajax_url'   => $this->context->link->getAdminLink('AdminProductBadges') . '&action=saveBadges',
+            'pb_ajax_url'   => $this->context->link->getAdminLink('AdminProductBadges') . '&action=saveBadges&ajax=1',
         ]);
 
         return $this->context->smarty->fetch(
