@@ -76,7 +76,8 @@ class ProductBadges extends Module
         $hooks = [
             'displayAdminProductsExtra',
             'displayProductListItem',
-            'displayProduct',
+            'displayProductPriceBlock',
+            'displayFooterProduct',
             'displayHeader',
             'displayBackOfficeHeader',
             'actionProductAdd',
@@ -305,16 +306,96 @@ class ProductBadges extends Module
 
     public function hookDisplayProductListItem(array $params): string
     {
-        return '';
+        if (!Configuration::get('PRODUCTBADGES_ENABLED') || !Configuration::get('PRODUCTBADGES_SHOW_LISTING')) {
+            return '';
+        }
+
+        $id_product = (int) ($params['product']['id_product'] ?? $params['product']['id'] ?? 0);
+
+        return $this->renderFrontBadges($id_product);
     }
 
-    public function hookDisplayProduct(array $params): string
+    public function hookDisplayProductPriceBlock(array $params): string
     {
-        return '';
+        if (($params['type'] ?? '') !== 'weight') {
+            return '';
+        }
+        if ($this->context->controller->php_self === 'product') {
+            return '';
+        }
+        if (!Configuration::get('PRODUCTBADGES_ENABLED') || !Configuration::get('PRODUCTBADGES_SHOW_LISTING')) {
+            return '';
+        }
+
+        $id_product = (int) ($params['product']['id_product'] ?? $params['product']['id'] ?? 0);
+        if (!$id_product) {
+            return '';
+        }
+
+        $badges = $this->getBadgesByProduct($id_product);
+        if (empty($badges)) {
+            return '';
+        }
+
+        $this->context->smarty->assign([
+            'pb_badges'     => $badges,
+            'pb_id_product' => $id_product,
+        ]);
+
+        return $this->context->smarty->fetch(
+            _PS_MODULE_DIR_ . 'productbadges/views/templates/front/badges_listing.tpl'
+        );
+    }
+
+    public function hookDisplayFooterProduct(array $params): string
+    {
+        if (!Configuration::get('PRODUCTBADGES_ENABLED') || !Configuration::get('PRODUCTBADGES_SHOW_PRODUCT')) {
+            return '';
+        }
+
+        $id_product = (int) ($params['product']['id_product'] ?? $params['product']['id'] ?? 0);
+        if (!$id_product) {
+            return '';
+        }
+
+        $badges = $this->getBadgesByProduct($id_product);
+        if (empty($badges)) {
+            return '';
+        }
+
+        $this->context->smarty->assign('pb_badges', $badges);
+
+        return $this->context->smarty->fetch(
+            _PS_MODULE_DIR_ . 'productbadges/views/templates/front/badges_product.tpl'
+        );
+    }
+
+    private function renderFrontBadges(int $id_product): string
+    {
+        if (!$id_product) {
+            return '';
+        }
+
+        $badges = $this->getBadgesByProduct($id_product);
+        if (empty($badges)) {
+            return '';
+        }
+
+        $this->context->smarty->assign('pb_badges', $badges);
+
+        return $this->context->smarty->fetch(
+            _PS_MODULE_DIR_ . 'productbadges/views/templates/front/badges.tpl'
+        );
     }
 
     public function hookDisplayHeader(): void
     {
+        if (!Configuration::get('PRODUCTBADGES_ENABLED')) {
+            return;
+        }
+
+        $this->context->controller->addCSS($this->_path . 'views/css/productbadges.css');
+        $this->context->controller->addJS($this->_path . 'views/js/productbadges.js');
     }
 
     // -------------------------------------------------------------------------

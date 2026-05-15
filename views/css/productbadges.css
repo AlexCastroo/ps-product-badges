@@ -1,0 +1,23 @@
+.productbadges-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.product-badge {
+  position: absolute;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 2px;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.product-badge--top-left  { top: 8px; left: 8px; }
+.product-badge--top-right { top: 8px; right: 8px; }
