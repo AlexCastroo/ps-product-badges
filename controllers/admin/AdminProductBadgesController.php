@@ -64,6 +64,20 @@ class AdminProductBadgesController extends AdminController
              . ';border:1px solid #aaa;vertical-align:middle;border-radius:2px;"></span> ' . $safe;
     }
 
+    public function ajaxProcessSaveBadges(): void
+    {
+        $id_product = (int) Tools::getValue('id_product');
+        if (!$id_product) {
+            die(json_encode(['success' => false]));
+        }
+
+        $module    = Module::getInstanceByName('productbadges');
+        $badge_ids = (array) Tools::getValue('badge_product_ids', []);
+        $module->saveBadgesForProduct($id_product, $badge_ids);
+
+        die(json_encode(['success' => true]));
+    }
+
     public function renderForm(): string
     {
         $this->fields_form = [

@@ -327,7 +327,25 @@ class ProductBadges extends Module
 
     public function hookDisplayAdminProductsExtra(array $params): string
     {
-        return '';
+        $id_product   = (int) ($params['id_product'] ?? Tools::getValue('id_product'));
+        $id_lang      = (int) $this->context->language->id;
+        $assigned_ids = $id_product ? $this->getAssignedBadgeIds($id_product) : [];
+        $badges       = $this->getActiveBadges($id_lang);
+
+        foreach ($badges as &$badge) {
+            $badge['is_assigned'] = in_array($badge['id_badge'], $assigned_ids);
+        }
+        unset($badge);
+
+        $this->context->smarty->assign([
+            'pb_badges'     => $badges,
+            'pb_id_product' => $id_product,
+            'pb_ajax_url'   => $this->context->link->getAdminLink('AdminProductBadges') . '&action=saveBadges',
+        ]);
+
+        return $this->context->smarty->fetch(
+            _PS_MODULE_DIR_ . 'productbadges/views/templates/admin/product_badges_tab.tpl'
+        );
     }
 
     // -------------------------------------------------------------------------
