@@ -131,9 +131,5 @@ ps_product_badge_product  — Relación N:M entre badges y productos (con soport
 
 ## Entorno de desarrollo
 
-```bash
-docker-compose up -d
-```
-
-PrestaShop disponible en `http://localhost:80`  
-Back Office en `http://localhost:80/admin`
+PrestaShop disponible en `http://localhost:8080`  
+Back Office en `http://localhost:8080/admin2026`
